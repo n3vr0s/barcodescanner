@@ -4,7 +4,9 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Canvas;
+import android.graphics.CornerPathEffect;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.AttributeSet;
@@ -56,9 +58,7 @@ public class ViewFinderView extends View {
             return;
         }
 
-        drawViewFinderMask(canvas);
         drawViewFinderBorder(canvas);
-        drawLaser(canvas);
     }
 
     public void drawViewFinderMask(Canvas canvas) {
@@ -76,24 +76,44 @@ public class ViewFinderView extends View {
     }
 
     public void drawViewFinderBorder(Canvas canvas) {
-        Paint paint = new Paint();
         Resources resources = getResources();
-        paint.setColor(resources.getColor(R.color.viewfinder_border));
+        Paint paint = preparePaint(resources);
+        int lineLength = resources.getDimensionPixelSize(R.dimen.lineLength);
+
+        Path path = new Path();
+
+        path.moveTo(mFramingRect.left + lineLength, mFramingRect.top);
+        path.lineTo(mFramingRect.left , mFramingRect.top );
+        path.lineTo(mFramingRect.left, mFramingRect.top + lineLength);
+
+        path.moveTo(mFramingRect.right - lineLength, mFramingRect.top);
+        path.lineTo(mFramingRect.right , mFramingRect.top );
+        path.lineTo(mFramingRect.right, mFramingRect.top + lineLength);
+
+        path.moveTo(mFramingRect.left + lineLength, mFramingRect.bottom);
+        path.lineTo(mFramingRect.left , mFramingRect.bottom );
+        path.lineTo(mFramingRect.left, mFramingRect.bottom - lineLength);
+
+
+        path.moveTo(mFramingRect.right - lineLength, mFramingRect.bottom);
+        path.lineTo(mFramingRect.right , mFramingRect.bottom );
+        path.lineTo(mFramingRect.right, mFramingRect.bottom - lineLength);
+
+        canvas.drawPath(path, paint);
+    }
+
+    private Paint preparePaint(Resources resources) {
+        Paint paint = new Paint();
+        paint.setColor(resources.getColor(R.color.bg_blue));
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(resources.getInteger(R.integer.viewfinder_border_width));
-        int lineLength = resources.getInteger(R.integer.viewfinder_border_length);
-
-        canvas.drawLine(mFramingRect.left - 1, mFramingRect.top - 1, mFramingRect.left - 1, mFramingRect.top - 1 + lineLength, paint);
-        canvas.drawLine(mFramingRect.left - 1, mFramingRect.top - 1, mFramingRect.left - 1 + lineLength, mFramingRect.top - 1, paint);
-
-        canvas.drawLine(mFramingRect.left - 1, mFramingRect.bottom + 1, mFramingRect.left - 1, mFramingRect.bottom + 1 - lineLength, paint);
-        canvas.drawLine(mFramingRect.left - 1, mFramingRect.bottom + 1, mFramingRect.left - 1 + lineLength, mFramingRect.bottom + 1, paint);
-
-        canvas.drawLine(mFramingRect.right + 1, mFramingRect.top - 1, mFramingRect.right + 1, mFramingRect.top - 1 + lineLength, paint);
-        canvas.drawLine(mFramingRect.right + 1, mFramingRect.top - 1, mFramingRect.right + 1 - lineLength, mFramingRect.top - 1, paint);
-
-        canvas.drawLine(mFramingRect.right + 1, mFramingRect.bottom + 1, mFramingRect.right + 1, mFramingRect.bottom + 1 - lineLength, paint);
-        canvas.drawLine(mFramingRect.right + 1, mFramingRect.bottom + 1, mFramingRect.right + 1 - lineLength, mFramingRect.bottom + 1, paint);
+        paint.setAntiAlias(true);
+        paint.setStrokeWidth(resources.getDimensionPixelSize(R.dimen.rectangleWidth));
+        paint.setPathEffect(new CornerPathEffect(resources.getDimensionPixelSize(R.dimen.rectangleWidth)) );
+        paint.setDither(true);                    // set the dither to true
+        paint.setStyle(Paint.Style.STROKE);       // set to STOKE
+        paint.setStrokeJoin(Paint.Join.ROUND);    // set the join to round you want
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        return paint;
     }
 
     public void drawLaser(Canvas canvas) {
@@ -133,7 +153,7 @@ public class ViewFinderView extends View {
             height = findDesiredDimensionInRange(LANDSCAPE_HEIGHT_RATIO, viewResolution.y, MIN_FRAME_HEIGHT, LANDSCAPE_MAX_FRAME_HEIGHT);
         } else {
             width = findDesiredDimensionInRange(PORTRAIT_WIDTH_RATIO, viewResolution.x, MIN_FRAME_WIDTH, PORTRAIT_MAX_FRAME_WIDTH);
-            height = findDesiredDimensionInRange(PORTRAIT_HEIGHT_RATIO, viewResolution.y, MIN_FRAME_HEIGHT, PORTRAIT_MAX_FRAME_HEIGHT);
+            height = width;//findDesiredDimensionInRange(PORTRAIT_HEIGHT_RATIO, viewResolution.y, MIN_FRAME_HEIGHT, PORTRAIT_MAX_FRAME_HEIGHT);
         }
 
         int leftOffset = (viewResolution.x - width) / 2;
